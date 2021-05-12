@@ -1,15 +1,13 @@
 #include<stdio.h>
 #include<string.h>
-int count = 0;          //현재 존재하는 캐릭터의 수를 저장하기 위해 count 변수를 선언했다.
-int temp = 0;           //메뉴 3번에서 현재 존재하는 캐릭터 정보를 출력해줘야하는데 for문의 조건식을 만들기 위해 선언한 변수.
-                        //맨 처음에는 for문을 count 까지 돌렸는데 이렇게 된다면 중간에 캐릭터를 삭제할경우 count 값이 변할 수 있으므로 추가하는 개수에 맞춰 for문을 돌리면 되므로 temp 변수에 카운팅시키면 삭제하는 과정에 영향을 받지 않는다.
-struct character {     //구조체 선언. 이름을 담을 name, 레벨을 담을 level, 직업을 담을 job, 그리고 메뉴 2번에서 삭제된 캐릭터까지 출력하면 안되므로 이것을 체크해주기 위한 check 를 만들었다.
+int count = 0;  //존재하는 캐릭터 수를 카운팅 하기 위한 변수.
+
+struct character {
 	char name[30];
 	int level;
 	char job[30];
-	int check;
 };
-struct character ch[100];
+struct character ch[100];   //구조체 선언
 
 int op1()
 {
@@ -20,12 +18,12 @@ int op1()
 	printf("[>] 직    업 : ");
 	scanf("%s", ch[count].job);     //직업을 입력받고 구조체에 저장
 	printf("[>] %d번째 캐릭터 생성 완료\n\n",count+1);
+    count++;    //현재 존재하는 캐릭터 수를 카운팅하는 변수 count (삭제된 캐릭터는 카운팅 X)
+
 	for(int i=0; i<44; i++)
         printf("-");
     printf("\n");
-    ch[count].check = 1;    //존재하는 캐릭터는 ch[count].check 를 1 로 표시했다.
-    count++;                //캐릭터수가 하나 늘었으므로 count+1 을 해주었다.
-    temp++;
+
     return 0;
 }
 int op2()
@@ -34,11 +32,16 @@ int op2()
     printf("[>] 삭제할 캐릭터의 번호 : ");
     scanf("%d",&select);
 
-    if(select <= count && select > 0)   //존재하는 캐릭터 번호인지, 음수인지 체크하는 부분이다.
+    if(select <= count && select > 0)       //유효한 숫자인지 확인. 이 부분은 삭제를 시키는 부분
     {
-        ch[select-1].check = 0;          //구조체 멤버 중 check 는 캐릭터가 존재하는 캐릭터인지 삭제된 캐릭터인지 체크하는 멤버다. 존재하는 캐릭터는 check 멤버를 1 로, 삭제된 캐릭터는 check 멤버를 0 으로 설정했다.
-        count--;                        //존재하는 캐릭터 수를 담는 count 변수이다. 캐릭터가 삭제됐으므로 count-1 을 해준다.
-        printf("[>] 삭제 완료.\n\n");
+        for(int i=select; i<count; i++)     //예를 들어 A B C D 이렇게 있는데 C를 삭제할 경우, 한칸씩 앞으로 당겨지기 때문에 A B D 와 같이 캐릭터가 존재할 것이다. 이것을 표현한 부분이다.
+        {
+            strcpy(ch[i-1].name, ch[i].name);   //이름 멤버를 한칸씩 옮긴다.
+            strcpy(ch[i-1].job, ch[i].job);     //직업 멤버를 한칸씩 옮긴다.
+            ch[i-1].level = ch[i].level;        //레벨 멤버를 한칸씩 옮긴다.
+        }
+        count--;                //삭제했으니까 카운트 하나를 빼줘야 한다.
+         printf("[>] 삭제 완료.\n\n");
     }
     else
         printf("[>]유효한 값을 입력해주세요.\n");
@@ -46,38 +49,39 @@ int op2()
 int op3()
 {
     int c = 1;
-    for(int i=0; i<temp; i++)
+    for(int i=0; i<count; i++)  //앞에서 삭제 과정이 있다 하더라도 한칸씩 당겨지기 때문에 연속되어 있을 것이다. 그래서 캐릭터 수만큼 for 문을 실행시키면 된다.
     {
-        if(ch[i].check == 1)    //삭제된 캐릭터는 출력하면 안된다. 따라서 ch[i].check==1 는 존재하는 캐릭터라는 것이다.
-        {
-            printf("[>] %d번째 캐릭터\n[>] 이   름 : %s\n[>] LEVEL : %d\n[>] 직  업 : %s",c, ch[i].name, ch[i].level, ch[i].job);
-            c++;        //출력 시, 1 2 3 ... 번째 캐릭터라고 출력하기 위해서 존재하는 캐릭터 일때만 c+1 하였다.
-            printf("\n\n");
-        }
+            printf("[>] %d번째 캐릭터\n[>] 이   름 : %s\n[>] LEVEL : %d\n[>] 직  업 : %s\n\n",c, ch[i].name, ch[i].level, ch[i].job);
+            c++;
     }
 }
 int op4()
 {
     int select;
-    char op;
+    char op[3];
     printf("수정할 캐릭터의 번호를 입력하세요.\n[>] ");
     scanf(" %d",&select);
+    if(select<=0 || select >count)  //수정할 캐릭터 번호가 유효한 숫자인지 체크하는 부분.
+    {
+        printf("유효한 값을 입력해주세요\n\n");
+        return 0;
+    }
     printf("[>] 이    름 : %s\n[>] LEVEL : %d\n[>]작   업 : %s\n\n",ch[select-1].name, ch[select-1].level, ch[select-1].job);
-    while(1)
+    while(1)    //앞에서 select 변수의 값이 유효한 값이라면 수정 진행.
     {
         printf("위 캐릭터의 정보를 수정하시습니까?\n내용 수정을 원하면 Y, 아니면 N을 눌러주세요.\n[>] ");
-        scanf(" %c",&op);
-        if(op=='Y') //수정을 원한다면~
+        scanf(" %s",op);
+        if(strcmp(op,"Y")==0) //수정을 원한다면
         {
             int x;
             printf("이    름 수정을 원하시면 1\nLEVEL 수정을 원하시면 2\n직    업 수정을 원하시면 3\n[>] ");
-            scanf(" %d",&x);    //어떤 것을 수정할 지 물어본다.
-            if(x == 1)  //이름을 수정하고 싶으면~
+            scanf(" %d",&x);
+            if(x == 1)
             {
                 char changename[10];
                 printf("바꿀 이름을 입력해주세요\n[>] ");
                 scanf(" %s",changename);
-                strncpy(ch[select-1].name, changename, sizeof(changename)+2); //입력받은 바꿀 이름을 기존 이름에 문자열 길이만큼 복사한다.
+                strcpy(ch[select-1].name, changename);  //새로운 이름을 기존의 이름에 덮어쓴다.
                 printf("[*] 변환완료\n\n");
                 break;
             }
@@ -86,7 +90,7 @@ int op4()
                 int changelevel;
                 printf("바꿀 LEVEL을 입력해주세요\n[>] ");
                 scanf(" %d",&changelevel);
-                ch[select-1].level = changelevel;
+                ch[select-1].level = changelevel;   //새로운 레벨을 기존의 레벨에 덮어쓴다.
                 printf("[*] 변환완료\n\n");
                 break;
             }
@@ -95,22 +99,22 @@ int op4()
                 char changejob[10];
                 printf("바꿀 직업을 입력해주세요\n[>] ");
                 scanf(" %s",changejob);
-                strncpy(ch[select-1].job, changejob, sizeof(changejob)+2);    //입력받는 바꿀 직업을 기존 직업에 문자열 길이만큼 복사한다.
+                strcpy(ch[select-1].job, changejob);    //새로운 직업을 기존의 직업에 덮어쓴다.
                 printf("[*] 변환완료\n\n");
                 break;
             }
         }
-        else if(op == 'N')
+        else if(strcmp(op,"N")==0)  //N 을 누르면 다시 메뉴판으로 이동
         {
-            printf("\n");   //대답이 N 이라면 while 문 탈출하고 다시 메뉴판 출력
-            break;
+            printf("\n");
+            return 0;
         }
         else
             printf("다시 입력해 주세요\n\n");
     }
     return 0;
 }
-int menu(void)  //메뉴판을 출력하는 함수.
+int menu(void)  //메뉴 출력하는 부분.
 {
 	int op;
 	for (int i = 0; i < 44; i++)
@@ -139,14 +143,14 @@ int menu(void)  //메뉴판을 출력하는 함수.
 		printf("-");
 	printf("\n\n");
 
-	return op;  //어떤 메뉴를 선택할 지, 입력받은 번호를 main 함수로 반환한다.
+	return op;
 }
 int main()
 {
 	while (1)
 	{
 		int op;
-		op = menu();    //menu 함수에서 반환받은 명령에 따라 기능을 수행한다.
+		op = menu();    //menu()함수에서 어떤 메뉴를 실행 시킬지 반환 값으로 받아온다.
 
 		if (op == 1)
 			op1();
